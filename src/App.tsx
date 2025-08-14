@@ -72,25 +72,7 @@ function App() {
     const planId = urlParams.get('plan');
     if (planId) {
       console.log('Loading plan from URL parameter:', planId);
-      // Load plan from URL parameter (simulate loading saved plan)
-      const savedPlan = localStorage.getItem(`plan_${planId}`);
-      if (savedPlan) {
-        console.log('Found saved plan, loading...');
-        try {
-          const { responses, plan } = JSON.parse(savedPlan);
-          setUserResponses(responses);
-          setGeneratedPlan(plan);
-          setCurrentScreen('results');
-          // Set the plan URL for sharing
-          const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
-          setPlanUrl(shareUrl);
-          console.log('Plan loaded successfully');
-        } catch (error) {
-          console.error('Error loading saved plan:', error);
-        }
-      } else {
-        console.log('No saved plan found for ID:', planId);
-      }
+      loadPlanFromDatabase(planId);
     }
 
     // Load saved progress sessions
@@ -100,12 +82,101 @@ function App() {
     }
   }, []);
 
+  const loadPlanFromDatabase = async (planId: string) => {
+    try {
+      // First try to load from database
+      const response = await fetch(`/api/get-plan?planId=${planId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Plan loaded from database');
+        setUserResponses(data.responses);
+        setGeneratedPlan(data.plan);
+        setCurrentScreen('results');
+        const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
+        setPlanUrl(shareUrl);
+        return;
+      }
+      
+      // Fallback to localStorage for backward compatibility
+      console.log('Trying localStorage fallback...');
+      const savedPlan = localStorage.getItem(`plan_${planId}`);
+      if (savedPlan) {
+        console.log('Found saved plan in localStorage, loading...');
+        try {
+          const { responses, plan } = JSON.parse(savedPlan);
+          setUserResponses(responses);
+          setGeneratedPlan(plan);
+          setCurrentScreen('results');
+          const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
+          setPlanUrl(shareUrl);
+          console.log('Plan loaded from localStorage successfully');
+          
+          // Also save to database for future cross-device access
+          savePlanToDatabase(planId, responses, plan);
+        } catch (error) {
+          console.error('Error loading saved plan from localStorage:', error);
+          // Redirect to home if plan can't be loaded
+          setCurrentScreen('welcome');
+        }
+      } else {
+        console.log('No saved plan found for ID:', planId);
+        // Redirect to home if plan doesn't exist
+        setCurrentScreen('welcome');
+      }
+    } catch (error) {
+      console.error('Error loading plan:', error);
+      // Try localStorage fallback
+      const savedPlan = localStorage.getItem(`plan_${planId}`);
+      if (savedPlan) {
+        const { responses, plan } = JSON.parse(savedPlan);
+        setUserResponses(responses);
+        setGeneratedPlan(plan);
+        setCurrentScreen('results');
+        const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
+        setPlanUrl(shareUrl);
+      } else {
+        setCurrentScreen('welcome');
+      }
+    }
+  };
+
+  const savePlanToDatabase = async (planId: string, responses: UserResponses, plan: GeneratedPlan) => {
+    try {
+      const response = await fetch('/api/save-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planId,
+          responses,
+          plan
+        })
+      });
+
+      if (response.ok) {
+        console.log('Plan saved to database successfully');
+      } else {
+        console.log('Failed to save plan to database');
+      }
+    } catch (error) {
+      console.error('Error saving plan to database:', error);
+    }
+  };
+
   // Additional useEffect to ensure plan URL is set when generatedPlan changes
   useEffect(() => {
     if (generatedPlan && !planUrl) {
       const planId = Date.now().toString();
       const planData = { responses: userResponses, plan: generatedPlan };
+      
+      // Save to localStorage for backward compatibility
       localStorage.setItem(`plan_${planId}`, JSON.stringify(planData));
+      
+      // Save to database for cross-device access
+      savePlanToDatabase(planId, userResponses, generatedPlan);
+      
       const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
       setPlanUrl(shareUrl);
     }
@@ -381,22 +452,77 @@ function App() {
     // Generate shareable URL
     const planId = Date.now().toString();
     const planData = { responses: userResponses, plan };
+    
+    // Save to localStorage for backward compatibility
     localStorage.setItem(`plan_${planId}`, JSON.stringify(planData));
+    
+    // Save to database for cross-device access
+    savePlanToDatabase(planId, userResponses, plan);
+    
     const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
     setPlanUrl(shareUrl);
   };
 
-  const handleEmailSubmit = (email: string, name: string) => {
+  const handleEmailSubmit = async (email: string, name: string) => {
     setUserResponses(prev => ({ ...prev, email, name }));
     setShowEmailGate(false);
     setShowEmailSent(true);
     setCurrentScreen('email-sent');
     
-    // Simulate sending email then redirect to results
+    // Send email with plan link
+    try {
+      await sendPlanEmail(email, name, planUrl);
+    } catch (error) {
+      console.log('Email sending failed, but user can still access plan:', error);
+    }
+    
+    // Redirect to results after showing email sent confirmation
     setTimeout(() => {
       setShowEmailSent(false);
       setCurrentScreen('results');
     }, 2000);
+  };
+
+  const sendPlanEmail = async (email: string, name: string, planUrl: string) => {
+    // Using EmailJS for client-side email sending
+    const emailData = {
+      to_email: email,
+      to_name: name,
+      plan_url: planUrl,
+      subject: `🎒 Your Personalized Rucking Plan is Ready!`,
+      message: `Hi ${name}!\n\nYour personalized 12-week rucking training plan is ready! This custom program has been created specifically based on your fitness level, goals, and preferences.\n\n✅ Personalized training progression\n✅ Custom gear recommendations\n✅ Budget-appropriate equipment suggestions\n✅ Progress tracking tools\n\nAccess your plan here: ${planUrl}\n\nBookmark this link to access your plan anytime. You can also use the progress tracker and other tools to monitor your rucking journey.\n\nReady to start your rucking transformation?\n\nBest regards,\nThe RuckingStart Team\n\nP.S. Share this link with friends who might want to start their own rucking journey!`
+    };
+
+    // For now, we'll use a simple fetch to a serverless function
+    // This would typically integrate with EmailJS, SendGrid, or similar service
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Email sending failed');
+      }
+
+      console.log('Email sent successfully');
+      return true;
+    } catch (error) {
+      // Fallback: Store email for manual sending or future processing
+      const emailQueue = JSON.parse(localStorage.getItem('email_queue') || '[]');
+      emailQueue.push({
+        ...emailData,
+        timestamp: new Date().toISOString(),
+        status: 'pending'
+      });
+      localStorage.setItem('email_queue', JSON.stringify(emailQueue));
+      
+      console.log('Email queued for later delivery');
+      throw error;
+    }
   };
 
   const generatePDF = () => {
