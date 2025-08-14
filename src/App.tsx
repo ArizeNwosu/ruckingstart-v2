@@ -82,7 +82,7 @@ function App() {
           setGeneratedPlan(plan);
           setCurrentScreen('results');
           // Set the plan URL for sharing
-          const shareUrl = `${window.location.origin}${window.location.pathname}?plan=${planId}`;
+          const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
           setPlanUrl(shareUrl);
           console.log('Plan loaded successfully');
         } catch (error) {
@@ -106,7 +106,7 @@ function App() {
       const planId = Date.now().toString();
       const planData = { responses: userResponses, plan: generatedPlan };
       localStorage.setItem(`plan_${planId}`, JSON.stringify(planData));
-      const shareUrl = `${window.location.origin}${window.location.pathname}?plan=${planId}`;
+      const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
       setPlanUrl(shareUrl);
     }
   }, [generatedPlan, planUrl, userResponses]);
@@ -382,7 +382,7 @@ function App() {
     const planId = Date.now().toString();
     const planData = { responses: userResponses, plan };
     localStorage.setItem(`plan_${planId}`, JSON.stringify(planData));
-    const shareUrl = `${window.location.origin}${window.location.pathname}?plan=${planId}`;
+    const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
     setPlanUrl(shareUrl);
   };
 
@@ -504,8 +504,44 @@ function App() {
     const subject = `🎒 Check out my personalized rucking training plan!`;
     const body = `Hi there!\n\nI just created a personalized 12-week rucking training plan using RuckingStart - it's completely free and creates custom programs based on your fitness level, goals, and preferences.\n\n✅ Personalized based on fitness level\n✅ Custom gear recommendations\n✅ Progressive 12-week program\n✅ Completely free to use\n\nYou can check out my plan and create your own here: ${planUrl}\n\nRucking is an amazing workout that burns 3x more calories than walking while building full-body strength and mental toughness. Give it a try!\n\nBest regards,\n${userResponses.name || 'Your friend'}`;
     
-    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink, '_blank');
+    // Try multiple email methods
+    try {
+      // Method 1: Try mailto link
+      const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
+      // For better user experience, show the link they can copy
+      const shareText = `${subject}\n\n${body}`;
+      
+      // Create a temporary textarea to copy the email content
+      const textarea = document.createElement('textarea');
+      textarea.value = shareText;
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        // Modern clipboard API
+        navigator.clipboard.writeText(shareText).then(() => {
+          alert('📧 Email content copied to clipboard! You can paste it into any email client.\n\n✅ Also opening your default email app...');
+          window.open(mailtoLink, '_blank');
+        }).catch(() => {
+          alert('📧 Opening your email client with pre-filled content...');
+          window.open(mailtoLink, '_blank');
+        });
+      } else {
+        // Fallback for older browsers
+        try {
+          document.execCommand('copy');
+          alert('📧 Email content copied to clipboard! You can paste it into any email client.\n\n✅ Also opening your default email app...');
+        } catch (err) {
+          alert('📧 Opening your email client with pre-filled content...');
+        }
+        window.open(mailtoLink, '_blank');
+      }
+      
+      document.body.removeChild(textarea);
+    } catch (error) {
+      alert('📧 Please copy this link to share: ' + planUrl);
+    }
   };
 
   const saveProgressSession = (distance: number, weight: number, duration: number, difficulty: string, notes: string) => {
@@ -1422,7 +1458,7 @@ function App() {
                 <h4 className="text-lg font-semibold text-emerald-400">Resources</h4>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
-                <a href="/resources/Ruckgang-Rucking-Starter-Guide.pdf" target="_blank" className="block bg-slate-700/50 p-4 rounded-xl hover:bg-slate-700 transition-colors border border-slate-600/30">
+                <a href="https://www.ruckingstart.com/resources/Ruckgang-Rucking-Starter-Guide.pdf" target="_blank" className="block bg-slate-700/50 p-4 rounded-xl hover:bg-slate-700 transition-colors border border-slate-600/30">
                   <div className="text-white font-medium">Official Rucking Guide</div>
                   <div className="text-slate-300 text-sm">Comprehensive training manual</div>
                 </a>
