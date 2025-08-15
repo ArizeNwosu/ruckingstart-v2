@@ -803,15 +803,17 @@ function App() {
         - ${item.item}: ${item.description} (${item.price})
       `).join('')}
       
-      Nutrition Plan for ${generatedPlan?.nutritionPlan.goal}:
-      - Daily Calories: ${generatedPlan?.nutritionPlan.dailyCalories}
-      - Protein: ${generatedPlan?.nutritionPlan.macros.protein}
-      - Carbohydrates: ${generatedPlan?.nutritionPlan.macros.carbs}
-      - Fats: ${generatedPlan?.nutritionPlan.macros.fats}
-      - Hydration: ${generatedPlan?.nutritionPlan.hydration}
+      ${generatedPlan?.nutritionPlan ? `
+      Nutrition Plan for ${generatedPlan.nutritionPlan.goal}:
+      - Daily Calories: ${generatedPlan.nutritionPlan.dailyCalories}
+      - Protein: ${generatedPlan.nutritionPlan.macros.protein}
+      - Carbohydrates: ${generatedPlan.nutritionPlan.macros.carbs}
+      - Fats: ${generatedPlan.nutritionPlan.macros.fats}
+      - Hydration: ${generatedPlan.nutritionPlan.hydration}
       
       Meal Timing Strategy:
-      ${generatedPlan?.nutritionPlan.mealTiming.map(timing => `- ${timing}`).join('\n      ')}
+      ${generatedPlan.nutritionPlan.mealTiming.map(timing => `- ${timing}`).join('\n      ')}
+      ` : ''}
       
       Key Safety Tips:
       ${generatedPlan?.tips.map(tip => `- ${tip}`).join('\n      ')}
@@ -1446,8 +1448,9 @@ function App() {
               </div>
 
               {/* Nutrition Plan */}
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50">
-                <h3 className="text-2xl font-bold text-white mb-6">🥗 Nutrition Plan for {generatedPlan.nutritionPlan.goal}</h3>
+              {generatedPlan.nutritionPlan && (
+                <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50">
+                  <h3 className="text-2xl font-bold text-white mb-6">🥗 Nutrition Plan for {generatedPlan.nutritionPlan.goal}</h3>
                 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-6">
@@ -1500,6 +1503,7 @@ function App() {
                   </div>
                 </div>
               </div>
+              )}
               
               {/* Success Tips */}
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50">
