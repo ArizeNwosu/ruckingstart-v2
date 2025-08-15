@@ -576,6 +576,36 @@ function App() {
     setGeneratedPlan(modifiedPlan);
   };
 
+  const sendFeedback = async (message: string) => {
+    try {
+      const feedbackData = {
+        to_email: 'riz@volty.tv', // Your email for receiving feedback
+        to_name: 'RuckingStart Team',
+        plan_url: window.location.href,
+        subject: '📝 User Feedback - RuckingStart',
+        message: `New feedback received from RuckingStart user:\n\n"${message}"\n\n---\nSubmitted from: ${window.location.href}\nTimestamp: ${new Date().toISOString()}\nUser Agent: ${navigator.userAgent}`
+      };
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData)
+      });
+
+      if (response.ok) {
+        console.log('Feedback sent successfully');
+        return true;
+      } else {
+        throw new Error('Failed to send feedback');
+      }
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+      return false;
+    }
+  };
+
   const generatePDF = () => {
     // Create PDF content
     const pdfContent = `
@@ -1715,14 +1745,34 @@ function App() {
             </div>
             <div className="space-y-4">
               <textarea
-                className="w-full px-4 py-3 bg-slate-700 rounded-lg text-white placeholder-slate-400 resize-none"
+                id="feedback-textarea"
+                className="w-full px-4 py-3 bg-slate-700 rounded-lg text-white placeholder-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 rows={4}
                 placeholder="How was your experience with RuckingStart? Any suggestions for improvement?"
               />
-              <button className="w-full bg-emerald-500 text-white py-3 rounded-lg font-semibold hover:bg-emerald-600 transition-colors">
+              <button 
+                onClick={async () => {
+                  const feedbackTextarea = document.getElementById('feedback-textarea') as HTMLTextAreaElement;
+                  const message = feedbackTextarea?.value || '';
+                  if (message.trim()) {
+                    const success = await sendFeedback(message);
+                    if (success) {
+                      setShowFeedback(false);
+                      feedbackTextarea.value = '';
+                      alert('Thank you for your feedback! Your message has been sent successfully.');
+                    } else {
+                      alert('Sorry, there was an error sending your feedback. Please try again later.');
+                    }
+                  }
+                }}
+                className="w-full bg-emerald-500 text-white py-3 rounded-lg font-semibold hover:bg-emerald-600 transition-colors"
+              >
                 Send Feedback
               </button>
             </div>
+            <p className="text-xs text-slate-400 mt-4 text-center">
+              Your feedback helps us improve RuckingStart for everyone!
+            </p>
           </div>
         </div>
       )}
@@ -1859,6 +1909,15 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Copyright Footer */}
+      <footer className="mt-12 py-6 border-t border-slate-700/50 bg-slate-900/50">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-slate-400 text-sm">
+            © 2025 RuckingStart. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
