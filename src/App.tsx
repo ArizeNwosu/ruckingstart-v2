@@ -65,6 +65,9 @@ function App() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [planUrl, setPlanUrl] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [beastModeWeight, setBeastModeWeight] = useState(0);
+  const [originalPlan, setOriginalPlan] = useState<GeneratedPlan | null>(null);
 
   // Check for URL parameters on load and load progress sessions
   useEffect(() => {
@@ -92,6 +95,7 @@ function App() {
         console.log('Plan loaded from database');
         setUserResponses(data.responses);
         setGeneratedPlan(data.plan);
+        setOriginalPlan(data.plan); // Store original plan for beast mode
         setCurrentScreen('results');
         const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
         setPlanUrl(shareUrl);
@@ -107,6 +111,7 @@ function App() {
           const { responses, plan } = JSON.parse(savedPlan);
           setUserResponses(responses);
           setGeneratedPlan(plan);
+          setOriginalPlan(plan); // Store original plan for beast mode
           setCurrentScreen('results');
           const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
           setPlanUrl(shareUrl);
@@ -132,6 +137,7 @@ function App() {
         const { responses, plan } = JSON.parse(savedPlan);
         setUserResponses(responses);
         setGeneratedPlan(plan);
+        setOriginalPlan(plan); // Store original plan for beast mode
         setCurrentScreen('results');
         const shareUrl = `https://www.ruckingstart.com?plan=${planId}`;
         setPlanUrl(shareUrl);
@@ -448,6 +454,7 @@ function App() {
     };
 
     setGeneratedPlan(plan);
+    setOriginalPlan(plan); // Store original plan for beast mode resets
     
     // Generate shareable URL
     const planId = Date.now().toString();
@@ -523,6 +530,27 @@ function App() {
       console.log('Email queued for later delivery');
       throw error;
     }
+  };
+
+  const applyBeastMode = (extraWeight: number) => {
+    if (!originalPlan) return;
+    
+    // Create a modified version of the original plan with extra weight
+    const modifiedPlan = {
+      ...originalPlan,
+      weeks: originalPlan.weeks.map(week => {
+        // Extract the current weight number from the string (e.g., "20 lbs" -> 20)
+        const currentWeight = parseInt(week.weight.replace(/[^\d]/g, '')) || 0;
+        const newWeight = currentWeight + extraWeight;
+        
+        return {
+          ...week,
+          weight: `${newWeight} lbs`
+        };
+      })
+    };
+    
+    setGeneratedPlan(modifiedPlan);
   };
 
   const generatePDF = () => {
@@ -1037,58 +1065,15 @@ function App() {
                   </div>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center z-20">
-                  <div className="bg-emerald-500 text-white px-6 py-2 rounded-full font-semibold">
+                  <button 
+                    onClick={() => setShowEmailModal(true)}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105"
+                  >
                     Enter email to unlock
-                  </div>
+                  </button>
                 </div>
               </div>
 
-              <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
-                <div className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      id="name-input"
-                      placeholder="Your name"
-                      className="px-6 py-4 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                    />
-                    <input
-                      type="email"
-                      id="email-input"
-                      placeholder="Your email address"
-                      className="px-6 py-4 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          const emailInput = e.target as HTMLInputElement;
-                          const nameInput = document.getElementById('name-input') as HTMLInputElement;
-                          const email = emailInput.value;
-                          const name = nameInput?.value || '';
-                          if (email && email.includes('@') && name) {
-                            handleEmailSubmit(email, name);
-                          }
-                        }
-                      }}
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      const emailInput = document.getElementById('email-input') as HTMLInputElement;
-                      const nameInput = document.getElementById('name-input') as HTMLInputElement;
-                      const email = emailInput?.value || '';
-                      const name = nameInput?.value || '';
-                      if (email && email.includes('@') && name) {
-                        handleEmailSubmit(email, name);
-                      }
-                    }}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300"
-                  >
-                    Get My Personalized Plan
-                  </button>
-                </div>
-                <p className="text-xs text-slate-400 mt-4">
-                  We respect your privacy. No spam, just your personalized plan and occasional tips.
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -1241,6 +1226,58 @@ function App() {
 
               </div>
 
+              {/* Beast Mode Slider */}
+              <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50 mt-8">
+                <h3 className="text-2xl font-bold text-white mb-4">🔥 Beast Mode</h3>
+                <p className="text-slate-300 mb-6">Want more intensity? Increase the weight for each recommendation.</p>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-white font-semibold">Extra Weight:</label>
+                    <span className="text-emerald-400 font-bold text-lg">{beastModeWeight} lbs</span>
+                  </div>
+                  
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    value={beastModeWeight}
+                    onChange={(e) => {
+                      const weight = parseInt(e.target.value);
+                      setBeastModeWeight(weight);
+                      applyBeastMode(weight);
+                    }}
+                    className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${(beastModeWeight / 50) * 100}%, #374151 ${(beastModeWeight / 50) * 100}%, #374151 100%)`
+                    }}
+                  />
+                  
+                  <div className="flex justify-between text-sm text-slate-400">
+                    <span>Standard</span>
+                    <span>Beast Mode</span>
+                  </div>
+                  
+                  {beastModeWeight > 10 && (
+                    <div className="bg-red-900/20 border border-red-700/50 rounded-xl p-4 mt-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="text-red-400 mt-1">⚠️</div>
+                        <div>
+                          <h4 className="text-red-400 font-semibold mb-2">High Intensity Warning</h4>
+                          <p className="text-red-300 text-sm">
+                            Adding {beastModeWeight} lbs significantly increases difficulty and injury risk. 
+                            Only attempt if you're experienced and in excellent physical condition.
+                          </p>
+                          <p className="text-red-400 text-xs mt-2 font-semibold">
+                            Proceed at your own risk. Consult a physician before attempting.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
                 <button
@@ -1256,6 +1293,19 @@ function App() {
                 >
                   <Share className="w-5 h-5" />
                   <span>Share with Friends</span>
+                </button>
+              </div>
+
+              {/* Create Your Own Plan Button */}
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={() => setCurrentScreen('welcome')}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 inline-flex items-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>Create Your Own Plan</span>
                 </button>
               </div>
             </div>
@@ -1680,6 +1730,72 @@ function App() {
                 <Copy className="w-5 h-5" />
                 <span>Copy Link</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-3xl p-8 max-w-md w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Get Your Plan</h3>
+              <button 
+                onClick={() => setShowEmailModal(false)} 
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid gap-4">
+                <input
+                  type="text"
+                  id="modal-name-input"
+                  placeholder="Your name"
+                  className="px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                />
+                <input
+                  type="email"
+                  id="modal-email-input"
+                  placeholder="Your email address"
+                  className="px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const emailInput = e.target as HTMLInputElement;
+                      const nameInput = document.getElementById('modal-name-input') as HTMLInputElement;
+                      const email = emailInput.value;
+                      const name = nameInput?.value || '';
+                      if (email && email.includes('@') && name) {
+                        handleEmailSubmit(email, name);
+                        setShowEmailModal(false);
+                      }
+                    }
+                  }}
+                />
+              </div>
+              
+              <button
+                onClick={() => {
+                  const emailInput = document.getElementById('modal-email-input') as HTMLInputElement;
+                  const nameInput = document.getElementById('modal-name-input') as HTMLInputElement;
+                  const email = emailInput?.value || '';
+                  const name = nameInput?.value || '';
+                  if (email && email.includes('@') && name) {
+                    handleEmailSubmit(email, name);
+                    setShowEmailModal(false);
+                  }
+                }}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+              >
+                Get My Personalized Plan
+              </button>
+              
+              <p className="text-xs text-slate-400 text-center">
+                We respect your privacy. No spam, just your personalized plan and occasional tips.
+              </p>
             </div>
           </div>
         </div>
