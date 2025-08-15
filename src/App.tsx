@@ -13,6 +13,7 @@ interface UserResponses {
   budget?: string;
   email?: string;
   name?: string;
+  progressionVariable?: string;
 }
 
 interface Question {
@@ -46,6 +47,14 @@ interface GeneratedPlan {
     optional: { item: string; description: string; price: string }[];
   };
   tips: string[];
+  nutritionPlan: {
+    goal: string;
+    dailyCalories: string;
+    macros: { protein: string; carbs: string; fats: string };
+    mealTiming: string[];
+    hydration: string;
+    supplements: string[];
+  };
 }
 
 function App() {
@@ -193,12 +202,12 @@ function App() {
     {
       id: 'frequency',
       title: 'How often would you like to ruck?',
-      description: 'Choose a frequency that fits your schedule and recovery needs. Beginners often start with 3 days per week.',
+      description: 'Choose a frequency that fits your schedule and recovery needs. Maximum 4x per week to ensure at least one rest day between sessions for proper recovery.',
       type: 'single-choice',
       options: [
-        { value: '3x', label: '3 times per week', icon: '📅', description: 'Ideal for beginners - quality over quantity with ample recovery' },
-        { value: '5x', label: '5 times per week', icon: '🗓️', description: 'Balanced approach for intermediate fitness levels' },
-        { value: '7x', label: '7 times per week', icon: '📆', description: 'Advanced - requires careful management and recovery planning' }
+        { value: '2x', label: '2 times per week', icon: '📅', description: 'Perfect for beginners - maximum recovery time between sessions' },
+        { value: '3x', label: '3 times per week', icon: '🗓️', description: 'Ideal for most people - quality over quantity with ample recovery' },
+        { value: '4x', label: '4 times per week', icon: '📆', description: 'Advanced - includes at least one rest day between sessions for proper recovery' }
       ]
     },
     {
@@ -291,6 +300,17 @@ function App() {
         { value: 'under-500', label: 'Under $500', icon: '💳', description: 'Quality gear investment' },
         { value: 'premium', label: 'Premium', icon: '💎', description: 'Best-in-class equipment' }
       ]
+    },
+    {
+      id: 'progressionVariable',
+      title: 'How would you like to progress through the program?',
+      description: 'For safety, we only increase one variable at a time. Choose your preferred progression focus.',
+      type: 'single-choice',
+      options: [
+        { value: 'distance', label: 'Distance Focus', icon: '📏', description: 'Keep weight steady, gradually increase distance each week' },
+        { value: 'weight', label: 'Weight Focus', icon: '🏋️', description: 'Keep distance steady, gradually increase weight each week' },
+        { value: 'balanced', label: 'Balanced Progression', icon: '⚖️', description: 'Alternate between distance and weight increases week by week' }
+      ]
     }
   ];
 
@@ -334,6 +354,167 @@ function App() {
     const bodyWeight = userResponses.bodyWeight || 150;
     const targetWeight = bodyWeight < 150 ? 20 : 30;
     const budget = userResponses.budget || 'under-300';
+    const progressionVariable = userResponses.progressionVariable || 'balanced';
+    const goal = userResponses.goal || 'general-fitness';
+    
+    // Generate nutrition plan based on goal
+    const generateNutritionPlan = () => {
+      const basePlan = {
+        hydration: 'Drink 16-24oz per hour of rucking. Start hydrating 2-3 hours before training.',
+        supplements: ['Electrolyte replacement during long rucks (60+ minutes)', 'Quality multivitamin for overall health']
+      };
+      
+      switch (goal) {
+        case 'weight-loss':
+          return {
+            ...basePlan,
+            goal: 'Weight Loss',
+            dailyCalories: 'Create 500-750 calorie deficit from maintenance (typically 1,500-1,800 calories/day)',
+            macros: {
+              protein: '35-40% (1.2-1.6g per lb bodyweight)',
+              carbs: '30-35% (focus on complex carbs around workouts)',
+              fats: '25-30% (healthy fats for hormone production)'
+            },
+            mealTiming: [
+              'Pre-ruck (1-2 hours): Light complex carbs + small protein',
+              'During ruck (60+ min): Electrolytes + 15-30g carbs per hour',
+              'Post-ruck (30 min): Protein shake + simple carbs for recovery',
+              'Daily: 4-5 smaller meals to maintain metabolism'
+            ]
+          };
+        case 'muscle-building':
+          return {
+            ...basePlan,
+            goal: 'Muscle Building',
+            dailyCalories: 'Slight surplus of 200-400 calories above maintenance',
+            macros: {
+              protein: '30-35% (1.6-2.2g per lb bodyweight)',
+              carbs: '40-45% (fuel for training and recovery)',
+              fats: '20-25% (hormone production and absorption)'
+            },
+            mealTiming: [
+              'Pre-ruck (1-2 hours): Balanced meal with carbs and protein',
+              'During ruck (60+ min): Carb-electrolyte drink + BCAAs',
+              'Post-ruck (30 min): Whey protein + fast carbs (2:1 carb:protein ratio)',
+              'Daily: Protein every 3-4 hours, post-workout nutrition priority'
+            ]
+          };
+        case 'endurance':
+          return {
+            ...basePlan,
+            goal: 'Endurance Performance',
+            dailyCalories: 'Match energy expenditure - typically 2,200-3,000+ calories/day',
+            macros: {
+              protein: '15-20% (1.2-1.4g per lb bodyweight)',
+              carbs: '60-65% (primary fuel source)',
+              fats: '20-25% (sustained energy for long efforts)'
+            },
+            mealTiming: [
+              'Pre-ruck (2-3 hours): High-carb meal, moderate protein, low fat',
+              'During ruck (60+ min): 30-60g carbs per hour + electrolytes',
+              'Post-ruck (30 min): 3:1 carb:protein ratio for glycogen replenishment',
+              'Daily: Carb-loading 2-3 days before long rucks, frequent fueling'
+            ]
+          };
+        case 'stress-relief':
+          return {
+            ...basePlan,
+            goal: 'Stress Relief & Mental Health',
+            dailyCalories: 'Maintenance calories with focus on nutrient density',
+            macros: {
+              protein: '25-30% (stable blood sugar and neurotransmitters)',
+              carbs: '40-45% (complex carbs for steady energy)',
+              fats: '25-30% (omega-3s for brain health)'
+            },
+            mealTiming: [
+              'Pre-ruck: Balanced meal 1-2 hours before to avoid GI distress',
+              'During ruck: Water and electrolytes, mindful breathing',
+              'Post-ruck: Anti-inflammatory foods, antioxidant-rich recovery meal',
+              'Daily: Regular meal timing to support circadian rhythms and mood'
+            ]
+          };
+        default:
+          return {
+            ...basePlan,
+            goal: 'General Fitness',
+            dailyCalories: 'Maintenance calories adjusted for training load',
+            macros: {
+              protein: '25-30% (1.2-1.6g per lb bodyweight)',
+              carbs: '40-45% (fuel for performance)',
+              fats: '25-30% (overall health and satiety)'
+            },
+            mealTiming: [
+              'Pre-ruck (1-2 hours): Balanced meal with emphasis on carbs',
+              'During ruck (60+ min): Electrolyte replacement as needed',
+              'Post-ruck (30 min): Protein + carbs for recovery',
+              'Daily: Consistent meal timing, variety of whole foods'
+            ]
+          };
+      }
+    };
+    
+    // Generate safe weekly progression
+    const generateWeeklyPlan = () => {
+      const weeks = [];
+      const startingDistance = 2; // Always start at 2-3 miles
+      const maxDistance = 6; // Double the starting distance by week 12
+      const startingWeight = Math.max(10, targetWeight - 15);
+      const maxWeight = targetWeight;
+      
+      for (let week = 1; week <= 12; week++) {
+        let distance, weight, notes;
+        
+        if (progressionVariable === 'distance') {
+          // Distance focus: Keep weight steady, increase distance
+          weight = `${startingWeight} lbs`;
+          const distanceProgress = startingDistance + ((maxDistance - startingDistance) * (week - 1) / 11);
+          distance = `${Math.round(distanceProgress)}-${Math.round(distanceProgress + 1)} miles`;
+          notes = `Distance focus week - weight stays constant at ${startingWeight}lbs for form mastery`;
+          
+        } else if (progressionVariable === 'weight') {
+          // Weight focus: Keep distance steady, increase weight
+          distance = `${startingDistance}-${startingDistance + 1} miles`;
+          const weightProgress = startingWeight + ((maxWeight - startingWeight) * (week - 1) / 11);
+          weight = `${Math.round(weightProgress)} lbs`;
+          notes = `Weight focus week - distance stays constant for strength building`;
+          
+        } else {
+          // Balanced: Alternate between distance and weight increases
+          if (week % 2 === 1) {
+            // Odd weeks: increase distance, keep weight steady
+            const weightProgress = startingWeight + ((maxWeight - startingWeight) * Math.floor((week - 1) / 2) / 6);
+            weight = `${Math.round(weightProgress)} lbs`;
+            const distanceProgress = startingDistance + ((maxDistance - startingDistance) * Math.floor(week / 2) / 6);
+            distance = `${Math.round(distanceProgress)}-${Math.round(distanceProgress + 1)} miles`;
+            notes = `Distance progression week - building endurance capacity`;
+          } else {
+            // Even weeks: increase weight, keep distance steady
+            const distanceFromPreviousWeek = startingDistance + ((maxDistance - startingDistance) * Math.floor((week - 2) / 2) / 6);
+            distance = `${Math.round(distanceFromPreviousWeek)}-${Math.round(distanceFromPreviousWeek + 1)} miles`;
+            const weightProgress = startingWeight + ((maxWeight - startingWeight) * Math.floor(week / 2) / 6);
+            weight = `${Math.round(weightProgress)} lbs`;
+            notes = `Weight progression week - building strength capacity`;
+          }
+        }
+        
+        // Add specific milestone notes
+        if (week === 1) notes = 'Foundation week - focus on form, pacing, and establishing routine';
+        if (week === 4) notes += ' | End of foundation phase - assess comfort and form';
+        if (week === 8) notes += ' | Mid-program checkpoint - evaluate progress and adjust as needed';
+        if (week === 12) notes = 'Peak week - celebrate your achievement and plan your next challenge!';
+        
+        weeks.push({
+          week,
+          distance,
+          weight,
+          frequency: userResponses.frequency || '3x',
+          terrain: userResponses.terrain || 'mixed',
+          notes
+        });
+      }
+      
+      return weeks;
+    };
     
     // Generate budget-specific gear recommendations
     const getGearRecommendations = () => {
@@ -426,31 +607,20 @@ function App() {
     };
     
     const plan: GeneratedPlan = {
-      weeks: [
-        { week: 1, distance: '0.5-1 mile', weight: `${Math.max(10, targetWeight - 10)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Focus on form and base building. Start conservatively with short distances.' },
-        { week: 2, distance: '1-1.5 miles', weight: `${Math.max(12, targetWeight - 8)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Maintain consistency, slight distance and weight increase.' },
-        { week: 3, distance: '1.5-2 miles', weight: `${Math.max(15, targetWeight - 5)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Build endurance, gradual distance increase.' },
-        { week: 4, distance: '2-2.5 miles', weight: `${Math.max(15, targetWeight - 5)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Foundation complete, prepare for building phase.' },
-        { week: 5, distance: '2.5-3 miles', weight: `${Math.max(18, targetWeight - 2)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Building phase begins, increase both distance and weight.' },
-        { week: 6, distance: '3-4 miles', weight: `${targetWeight} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Reach target weight, maintain distance progression.' },
-        { week: 7, distance: '4-5 miles', weight: `${targetWeight} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Push distance boundaries, solidify weight capacity.' },
-        { week: 8, distance: '5-6 miles', weight: `${targetWeight + 2} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Building phase peak, slight weight increase.' },
-        { week: 9, distance: '6-7 miles', weight: `${targetWeight + 5} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak phase begins, maximum challenge preparation.' },
-        { week: 10, distance: '7-8 miles', weight: `${targetWeight + 5} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak endurance and strength development.' },
-        { week: 11, distance: '8-10 miles', weight: `${targetWeight + 8} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Competition-ready performance level.' },
-        { week: 12, distance: '10-12+ miles', weight: `${targetWeight + 10} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak performance achieved - goal completion!' }
-      ],
+      weeks: generateWeeklyPlan(),
       gearRecommendations: getGearRecommendations(),
+      nutritionPlan: generateNutritionPlan(),
       tips: [
-        'Never increase weight and distance in the same week - progress one variable at a time',
-        'Focus on maintaining proper posture: chest up, shoulders back, core engaged',
-        'Listen to your body - persistent pain means rest, muscle fatigue is normal',
-        'Gradually increase intensity by 10% per week maximum (distance or weight)',
-        'Stay hydrated: drink 16-24oz per hour of rucking depending on conditions',
-        'Practice proper nutrition: eat 200-300 calories per hour for rucks over 90 minutes',
-        'Include at least one rest day between ruck sessions for recovery',
-        'Train on similar terrain to your goal event when possible',
-        'Break in all gear during training - never use new equipment on event day'
+        'SAFETY FIRST: Never increase weight and distance in the same week - progress one variable at a time',
+        'Include at least one rest day between ruck sessions for proper recovery and injury prevention',
+        'Focus on maintaining proper posture: chest up, shoulders back, core engaged throughout',
+        'Listen to your body - persistent pain means rest, muscle fatigue is normal adaptation',
+        'Gradually increase intensity by 10% per week maximum (distance OR weight, never both)',
+        'Stay hydrated: drink 16-24oz per hour of rucking depending on conditions and sweat rate',
+        'Practice proper nutrition: follow your goal-specific nutrition plan for optimal results',
+        'Train on similar terrain to your goal event when possible for specific adaptation',
+        'Break in all gear during training - never use new equipment on event day',
+        'Track your progress and adjust based on how your body responds to the training load'
       ]
     };
 
@@ -619,6 +789,7 @@ function App() {
       - Terrain: ${userResponses.terrain}
       - Time Available: ${userResponses.timeAvailable}
       - Budget: ${userResponses.budget}
+      - Progression Focus: ${userResponses.progressionVariable?.replace('-', ' ')}
       
       12-Week Training Plan:
       ${generatedPlan?.weeks.map(week => `
@@ -632,7 +803,17 @@ function App() {
         - ${item.item}: ${item.description} (${item.price})
       `).join('')}
       
-      Key Tips:
+      Nutrition Plan for ${generatedPlan?.nutritionPlan.goal}:
+      - Daily Calories: ${generatedPlan?.nutritionPlan.dailyCalories}
+      - Protein: ${generatedPlan?.nutritionPlan.macros.protein}
+      - Carbohydrates: ${generatedPlan?.nutritionPlan.macros.carbs}
+      - Fats: ${generatedPlan?.nutritionPlan.macros.fats}
+      - Hydration: ${generatedPlan?.nutritionPlan.hydration}
+      
+      Meal Timing Strategy:
+      ${generatedPlan?.nutritionPlan.mealTiming.map(timing => `- ${timing}`).join('\n      ')}
+      
+      Key Safety Tips:
       ${generatedPlan?.tips.map(tip => `- ${tip}`).join('\n      ')}
       
       Generated by RuckingStart - Your Personalized Rucking Coach
@@ -1264,6 +1445,62 @@ function App() {
                 </div>
               </div>
 
+              {/* Nutrition Plan */}
+              <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50">
+                <h3 className="text-2xl font-bold text-white mb-6">🥗 Nutrition Plan for {generatedPlan.nutritionPlan.goal}</h3>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-lg font-semibold text-emerald-400 mb-3">Daily Calorie Target</h4>
+                      <p className="text-slate-300">{generatedPlan.nutritionPlan.dailyCalories}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold text-emerald-400 mb-3">Macronutrient Breakdown</h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">Protein:</span>
+                          <span className="text-white">{generatedPlan.nutritionPlan.macros.protein}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">Carbohydrates:</span>
+                          <span className="text-white">{generatedPlan.nutritionPlan.macros.carbs}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-300">Fats:</span>
+                          <span className="text-white">{generatedPlan.nutritionPlan.macros.fats}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-semibold text-emerald-400 mb-3">Hydration & Supplements</h4>
+                      <p className="text-slate-300 mb-3">{generatedPlan.nutritionPlan.hydration}</p>
+                      <div className="space-y-1">
+                        {generatedPlan.nutritionPlan.supplements.map((supplement, index) => (
+                          <div key={index} className="flex items-start space-x-2">
+                            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-2 flex-shrink-0"></div>
+                            <span className="text-slate-300 text-sm">{supplement}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-lg font-semibold text-emerald-400 mb-3">Meal Timing Strategy</h4>
+                    <div className="space-y-3">
+                      {generatedPlan.nutritionPlan.mealTiming.map((timing, index) => (
+                        <div key={index} className="bg-slate-700/30 rounded-lg p-3">
+                          <p className="text-slate-300 text-sm">{timing}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               {/* Success Tips */}
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50">
                 <h3 className="text-2xl font-bold text-white mb-6">Success Tips & Guidelines</h3>
