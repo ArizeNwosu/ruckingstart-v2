@@ -426,18 +426,18 @@ function App() {
     
     const plan: GeneratedPlan = {
       weeks: [
-        { week: 1, distance: '2-3 miles', weight: `${Math.max(10, targetWeight - 10)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Focus on form and base building. Start conservatively.' },
-        { week: 2, distance: '2-4 miles', weight: `${Math.max(12, targetWeight - 8)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Maintain consistency, slight weight increase.' },
-        { week: 3, distance: '3-4 miles', weight: `${Math.max(15, targetWeight - 5)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Build endurance, gradual distance increase.' },
-        { week: 4, distance: '3-5 miles', weight: `${Math.max(15, targetWeight - 5)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Foundation complete, prepare for building phase.' },
-        { week: 5, distance: '4-6 miles', weight: `${Math.max(18, targetWeight - 2)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Building phase begins, increase both distance and weight.' },
-        { week: 6, distance: '4-6 miles', weight: `${targetWeight} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Reach target weight, maintain distance progression.' },
-        { week: 7, distance: '5-7 miles', weight: `${targetWeight} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Push distance boundaries, solidify weight capacity.' },
-        { week: 8, distance: '5-8 miles', weight: `${targetWeight + 2} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Building phase peak, slight weight increase.' },
-        { week: 9, distance: '6-8+ miles', weight: `${targetWeight + 5} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak phase begins, maximum challenge preparation.' },
-        { week: 10, distance: '6-10+ miles', weight: `${targetWeight + 5} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak endurance and strength development.' },
-        { week: 11, distance: '7-12+ miles', weight: `${targetWeight + 8} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Competition-ready performance level.' },
-        { week: 12, distance: '8-15+ miles', weight: `${targetWeight + 10} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak performance achieved - goal completion!' }
+        { week: 1, distance: '0.5-1 mile', weight: `${Math.max(10, targetWeight - 10)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Focus on form and base building. Start conservatively with short distances.' },
+        { week: 2, distance: '1-1.5 miles', weight: `${Math.max(12, targetWeight - 8)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Maintain consistency, slight distance and weight increase.' },
+        { week: 3, distance: '1.5-2 miles', weight: `${Math.max(15, targetWeight - 5)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Build endurance, gradual distance increase.' },
+        { week: 4, distance: '2-2.5 miles', weight: `${Math.max(15, targetWeight - 5)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Foundation complete, prepare for building phase.' },
+        { week: 5, distance: '2.5-3 miles', weight: `${Math.max(18, targetWeight - 2)} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Building phase begins, increase both distance and weight.' },
+        { week: 6, distance: '3-4 miles', weight: `${targetWeight} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Reach target weight, maintain distance progression.' },
+        { week: 7, distance: '4-5 miles', weight: `${targetWeight} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Push distance boundaries, solidify weight capacity.' },
+        { week: 8, distance: '5-6 miles', weight: `${targetWeight + 2} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Building phase peak, slight weight increase.' },
+        { week: 9, distance: '6-7 miles', weight: `${targetWeight + 5} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak phase begins, maximum challenge preparation.' },
+        { week: 10, distance: '7-8 miles', weight: `${targetWeight + 5} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak endurance and strength development.' },
+        { week: 11, distance: '8-10 miles', weight: `${targetWeight + 8} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Competition-ready performance level.' },
+        { week: 12, distance: '10-12+ miles', weight: `${targetWeight + 10} lbs`, frequency: userResponses.frequency || '3x', terrain: userResponses.terrain || 'mixed', notes: 'Peak performance achieved - goal completion!' }
       ],
       gearRecommendations: getGearRecommendations(),
       tips: [
@@ -1056,11 +1056,11 @@ function App() {
                   <div className="grid md:grid-cols-2 gap-4 text-left">
                     <div className="bg-slate-700/50 p-4 rounded-xl">
                       <div className="text-emerald-400 font-semibold">Week 1-4: Foundation</div>
-                      <div className="text-white">2-3 miles • 15-20 lbs</div>
+                      <div className="text-white">0.5-2.5 miles • 15-20 lbs</div>
                     </div>
                     <div className="bg-slate-700/50 p-4 rounded-xl">
                       <div className="text-emerald-400 font-semibold">Week 5-8: Building</div>
-                      <div className="text-white">4-6 miles • 20-25 lbs</div>
+                      <div className="text-white">2.5-6 miles • 20-25 lbs</div>
                     </div>
                   </div>
                 </div>
