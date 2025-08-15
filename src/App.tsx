@@ -67,6 +67,7 @@ function App() {
   const [planUrl, setPlanUrl] = useState('');
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [beastModeWeight, setBeastModeWeight] = useState(0);
+  const [beastModeDistance, setBeastModeDistance] = useState(0);
   const [originalPlan, setOriginalPlan] = useState<GeneratedPlan | null>(null);
 
   // Check for URL parameters on load and load progress sessions
@@ -532,10 +533,10 @@ function App() {
     }
   };
 
-  const applyBeastMode = (extraWeight: number) => {
+  const applyBeastMode = (extraWeight: number, distanceMultiplier: number = beastModeDistance) => {
     if (!originalPlan) return;
     
-    // Create a modified version of the original plan with extra weight
+    // Create a modified version of the original plan with extra weight and distance
     const modifiedPlan = {
       ...originalPlan,
       weeks: originalPlan.weeks.map(week => {
@@ -543,9 +544,31 @@ function App() {
         const currentWeight = parseInt(week.weight.replace(/[^\d]/g, '')) || 0;
         const newWeight = currentWeight + extraWeight;
         
+        // Parse distance ranges and apply multiplier (e.g., "2-3 miles" -> "2.6-3.9 miles")
+        const distanceMatch = week.distance.match(/([\d.]+)(?:-([\d.]+))?\s*(mile|miles)/);
+        let newDistance = week.distance;
+        
+        if (distanceMatch) {
+          const minDistance = parseFloat(distanceMatch[1]);
+          const maxDistance = distanceMatch[2] ? parseFloat(distanceMatch[2]) : minDistance;
+          const unit = distanceMatch[3];
+          
+          // Apply percentage increase
+          const multiplier = 1 + (distanceMultiplier / 100);
+          const newMin = Math.round(minDistance * multiplier * 10) / 10; // Round to 1 decimal
+          const newMax = Math.round(maxDistance * multiplier * 10) / 10; // Round to 1 decimal
+          
+          if (newMin === newMax) {
+            newDistance = `${newMin} ${unit}`;
+          } else {
+            newDistance = `${newMin}-${newMax} ${unit}`;
+          }
+        }
+        
         return {
           ...week,
-          weight: `${newWeight} lbs`
+          weight: `${newWeight} lbs`,
+          distance: newDistance
         };
       })
     };
@@ -1226,47 +1249,83 @@ function App() {
 
               </div>
 
-              {/* Beast Mode Slider */}
+              {/* Beast Mode Sliders */}
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl p-8 border border-slate-700/50 mt-8">
                 <h3 className="text-2xl font-bold text-white mb-4">🔥 Beast Mode</h3>
-                <p className="text-slate-300 mb-6">Want more intensity? Increase the weight for each recommendation.</p>
+                <p className="text-slate-300 mb-6">Want more intensity? Increase weight and distance for the ultimate challenge.</p>
                 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-white font-semibold">Extra Weight:</label>
-                    <span className="text-emerald-400 font-bold text-lg">{beastModeWeight} lbs</span>
+                <div className="space-y-6">
+                  {/* Weight Slider */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-white font-semibold">Extra Weight:</label>
+                      <span className="text-emerald-400 font-bold text-lg">{beastModeWeight} lbs</span>
+                    </div>
+                    
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      value={beastModeWeight}
+                      onChange={(e) => {
+                        const weight = parseInt(e.target.value);
+                        setBeastModeWeight(weight);
+                        applyBeastMode(weight, beastModeDistance);
+                      }}
+                      className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #10b981 0%, #10b981 ${(beastModeWeight / 50) * 100}%, #374151 ${(beastModeWeight / 50) * 100}%, #374151 100%)`
+                      }}
+                    />
+                    
+                    <div className="flex justify-between text-sm text-slate-400">
+                      <span>Standard</span>
+                      <span>Max Weight</span>
+                    </div>
+                  </div>
+
+                  {/* Distance Slider */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-white font-semibold">Distance Increase:</label>
+                      <span className="text-purple-400 font-bold text-lg">{beastModeDistance}%</span>
+                    </div>
+                    
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={beastModeDistance}
+                      onChange={(e) => {
+                        const distance = parseInt(e.target.value);
+                        setBeastModeDistance(distance);
+                        applyBeastMode(beastModeWeight, distance);
+                      }}
+                      className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #a855f7 0%, #a855f7 ${beastModeDistance}%, #374151 ${beastModeDistance}%, #374151 100%)`
+                      }}
+                    />
+                    
+                    <div className="flex justify-between text-sm text-slate-400">
+                      <span>Standard</span>
+                      <span>Double Distance</span>
+                    </div>
                   </div>
                   
-                  <input
-                    type="range"
-                    min="0"
-                    max="50"
-                    value={beastModeWeight}
-                    onChange={(e) => {
-                      const weight = parseInt(e.target.value);
-                      setBeastModeWeight(weight);
-                      applyBeastMode(weight);
-                    }}
-                    className="w-full h-3 bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
-                    style={{
-                      background: `linear-gradient(to right, #10b981 0%, #10b981 ${(beastModeWeight / 50) * 100}%, #374151 ${(beastModeWeight / 50) * 100}%, #374151 100%)`
-                    }}
-                  />
-                  
-                  <div className="flex justify-between text-sm text-slate-400">
-                    <span>Standard</span>
-                    <span>Beast Mode</span>
-                  </div>
-                  
-                  {beastModeWeight > 10 && (
+                  {(beastModeWeight > 10 || beastModeDistance > 25) && (
                     <div className="bg-red-900/20 border border-red-700/50 rounded-xl p-4 mt-4">
                       <div className="flex items-start space-x-3">
                         <div className="text-red-400 mt-1">⚠️</div>
                         <div>
                           <h4 className="text-red-400 font-semibold mb-2">High Intensity Warning</h4>
                           <p className="text-red-300 text-sm">
-                            Adding {beastModeWeight} lbs significantly increases difficulty and injury risk. 
-                            Only attempt if you're experienced and in excellent physical condition.
+                            {beastModeWeight > 10 && beastModeDistance > 25 
+                              ? `Adding ${beastModeWeight} lbs and ${beastModeDistance}% more distance significantly increases difficulty and injury risk.`
+                              : beastModeWeight > 10 
+                                ? `Adding ${beastModeWeight} lbs significantly increases difficulty and injury risk.`
+                                : `Increasing distance by ${beastModeDistance}% significantly increases difficulty and injury risk.`
+                            } Only attempt if you're experienced and in excellent physical condition.
                           </p>
                           <p className="text-red-400 text-xs mt-2 font-semibold">
                             Proceed at your own risk. Consult a physician before attempting.
